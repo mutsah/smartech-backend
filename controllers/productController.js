@@ -1,39 +1,34 @@
-const database = require("../config/database");
-const {
-  addProductSchema,
-  updateProductSchema,
-} = require("../middlewares/validator");
+const database = require('../config/database');
+const { addProductSchema, updateProductSchema } = require('../middlewares/validator');
 
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const { error } = require("console");
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { error } = require('console');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadPath = "uploads/products/";
+    const uploadPath = 'uploads/products/';
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "product-" + uniqueSuffix + path.extname(file.originalname));
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
   },
 });
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedTypes.test(
-    path.extname(file.originalname).toLowerCase()
-  );
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb(new Error("Only image files are allowed!"), false);
+    cb(new Error('Only image files are allowed!'), false);
   }
 };
 
@@ -45,7 +40,7 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-exports.uploadProductImage = upload.single("image");
+exports.uploadProductImage = upload.single('image');
 
 exports.addProduct = async (req, res) => {
   try {
@@ -67,13 +62,11 @@ exports.addProduct = async (req, res) => {
       if (imagePath && fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
-      return res
-        .status(401)
-        .json({ success: false, error: error.details[0].message });
+      return res.status(401).json({ success: false, error: error.details[0].message });
     }
 
     const productExists = await database.pool.query({
-      text: "SELECT EXISTS (SELECT * FROM products WHERE title = $1)",
+      text: 'SELECT EXISTS (SELECT * FROM products WHERE title = $1)',
       values: [title],
     });
 
@@ -82,14 +75,12 @@ exports.addProduct = async (req, res) => {
       if (imagePath && fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
-      return res
-        .status(409)
-        .json({ success: false, error: "Product already exists" });
+      return res.status(409).json({ success: false, error: 'Product already exists' });
     }
 
     // Insert product with image path
     const result = await database.pool.query({
-      text: "INSERT INTO products(title, description, price, image_path,stock, category) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
+      text: 'INSERT INTO products(title, description, price, image_path,stock, category) VALUES($1, $2, $3, $4, $5, $6) RETURNING id',
       values: [title, description, price, imagePath, stock, category],
     });
 
@@ -97,7 +88,7 @@ exports.addProduct = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Product created successfully",
+      message: 'Product created successfully',
       data: {
         id: productId,
         title,
@@ -107,10 +98,6 @@ exports.addProduct = async (req, res) => {
       },
     });
   } catch (error) {
-    // Delete uploaded file if database error occurs
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -120,14 +107,12 @@ exports.getProduct = async (req, res) => {
     const { id } = req.params;
 
     const result = await database.pool.query({
-      text: "SELECT * FROM products WHERE id = $1",
+      text: 'SELECT * FROM products WHERE id = $1',
       values: [id],
     });
 
     if (result.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Product not found" });
+      return res.status(404).json({ success: false, error: 'Product not found' });
     }
 
     const product = result.rows[0];
@@ -144,7 +129,7 @@ exports.getProduct = async (req, res) => {
 exports.getAllProducts = async (req, res) => {
   try {
     const result = await database.pool.query({
-      text: "SELECT * FROM products ORDER BY id DESC",
+      text: 'SELECT * FROM products ORDER BY id DESC',
     });
 
     res.status(200).json({
@@ -163,29 +148,25 @@ exports.removeProduct = async (req, res) => {
     if (!id || isNaN(id)) {
       return res.status(400).json({
         success: false,
-        error: "Valid product ID is required",
+        error: 'Valid product ID is required',
       });
     }
 
     const productExists = await database.pool.query({
-      text: "SELECT EXISTS (SELECT * FROM products WHERE id = $1)",
+      text: 'SELECT EXISTS (SELECT * FROM products WHERE id = $1)',
       values: [id],
     });
 
     if (!productExists.rows[0].exists) {
-      return res
-        .status(409)
-        .json({ success: false, error: "Product not found" });
+      return res.status(409).json({ success: false, error: 'Product not found' });
     }
 
     await database.pool.query({
-      text: "DELETE FROM products where id = $1",
+      text: 'DELETE FROM products where id = $1',
       values: [id],
     });
 
-    res
-      .status(200)
-      .json({ success: true, message: "Product removed successfully" });
+    res.status(200).json({ success: true, message: 'Product removed successfully' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -209,13 +190,11 @@ exports.updateProduct = async (req, res) => {
       if (imagePath && fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
-      return res
-        .status(400)
-        .json({ success: false, error: error.details[0].message });
+      return res.status(400).json({ success: false, error: error.details[0].message });
     }
 
     const productResult = await database.pool.query({
-      text: "SELECT id, image_path FROM products WHERE id = $1",
+      text: 'SELECT id, image_path FROM products WHERE id = $1',
       values: [id],
     });
 
@@ -223,16 +202,14 @@ exports.updateProduct = async (req, res) => {
       if (imagePath && fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
-      return res
-        .status(404)
-        .json({ success: false, error: "Product not found" });
+      return res.status(404).json({ success: false, error: 'Product not found' });
     }
 
     const currentImagePath = productResult.rows[0].image_path;
 
-    if (title && title.trim() !== "") {
+    if (title && title.trim() !== '') {
       const titleConflict = await database.pool.query({
-        text: "SELECT EXISTS (SELECT 1 FROM products WHERE title = $1 AND id != $2)",
+        text: 'SELECT EXISTS (SELECT 1 FROM products WHERE title = $1 AND id != $2)',
         values: [title, id],
       });
 
@@ -240,9 +217,7 @@ exports.updateProduct = async (req, res) => {
         if (imagePath && fs.existsSync(imagePath)) {
           fs.unlinkSync(imagePath);
         }
-        return res
-          .status(409)
-          .json({ success: false, error: "Product title already in use" });
+        return res.status(409).json({ success: false, error: 'Product title already in use' });
       }
     }
 
@@ -250,23 +225,19 @@ exports.updateProduct = async (req, res) => {
     const values = [];
     let paramIndex = 1;
 
-    if (title !== undefined && title !== null && String(title).trim() !== "") {
+    if (title !== undefined && title !== null && String(title).trim() !== '') {
       updateFields.push(`title = $${paramIndex}`);
       values.push(String(title).trim());
       paramIndex++;
     }
 
-    if (
-      description !== undefined &&
-      description !== null &&
-      String(description).trim() !== ""
-    ) {
+    if (description !== undefined && description !== null && String(description).trim() !== '') {
       updateFields.push(`description = $${paramIndex}`);
       values.push(String(description).trim());
       paramIndex++;
     }
 
-    if (price !== undefined && price !== null && String(price).trim() !== "") {
+    if (price !== undefined && price !== null && String(price).trim() !== '') {
       const numPrice = parseFloat(price);
       if (!isNaN(numPrice) && numPrice > 0) {
         updateFields.push(`price = $${paramIndex}`);
@@ -275,7 +246,7 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    if (stock !== undefined && stock !== null && String(stock).trim() !== "") {
+    if (stock !== undefined && stock !== null && String(stock).trim() !== '') {
       const numStock = parseInt(stock);
       if (!isNaN(numStock) && numStock >= 0) {
         updateFields.push(`stock = $${paramIndex}`);
@@ -284,11 +255,7 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    if (
-      category !== undefined &&
-      category !== null &&
-      String(category).trim() !== ""
-    ) {
+    if (category !== undefined && category !== null && String(category).trim() !== '') {
       updateFields.push(`category = $${paramIndex}`); // Fixed: Added $ prefix
       values.push(String(category).trim());
       paramIndex++;
@@ -308,14 +275,12 @@ exports.updateProduct = async (req, res) => {
       if (imagePath && fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
-      return res
-        .status(400)
-        .json({ success: false, error: "No valid fields provided for update" });
+      return res.status(400).json({ success: false, error: 'No valid fields provided for update' });
     }
 
     const queryText = `
       UPDATE products 
-      SET ${updateFields.join(", ")}
+      SET ${updateFields.join(', ')}
       WHERE id = $${values.length}
       RETURNING *
     `;
@@ -333,7 +298,7 @@ exports.updateProduct = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Product updated successfully",
+      message: 'Product updated successfully',
       data: {
         id: updatedProduct.id,
         title: updatedProduct.title,
@@ -347,7 +312,7 @@ exports.updateProduct = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Update Product Error:", error);
+    console.error('Update Product Error:', error);
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }

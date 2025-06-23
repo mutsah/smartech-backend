@@ -1,4 +1,4 @@
-const Joi = require("joi");
+const Joi = require('joi');
 
 exports.signupSchema = Joi.object({
   name: Joi.string().required(),
@@ -25,19 +25,19 @@ exports.verifyResetSchema = Joi.object({
 
 exports.updateProductSchema = Joi.object({
   title: Joi.string().min(1).max(255).optional(),
-  description: Joi.string().max(1000).optional().allow(""),
+  description: Joi.string().max(1000).optional().allow(''),
   price: Joi.number().positive().optional(),
   stock: Joi.number().integer().min(0).optional(),
   category: Joi.string().min(1).max(100).optional(),
 });
 
-// exports.updateProductSchema = Joi.object({
-//   title: Joi.string().min(3).max(100),
-//   description: Joi.string().min(10).max(1000),
-//   price: Joi.number().positive().precision(2),
-//   stock: Joi.number().integer().min(0),
-//   category: Joi.string().min(3).max(50),
-// });
+exports.addProductSchema = Joi.object({
+  title: Joi.string().required(),
+  description: Joi.string().required(),
+  price: Joi.number().required(),
+  stock: Joi.number().required(),
+  category: Joi.string().required(),
+});
 
 exports.saveOrderSchema = Joi.object({
   userId: Joi.number().required(),
