@@ -1,12 +1,11 @@
-const database = require("../config/database");
-const { saveOrderSchema } = require("../middlewares/validator");
+const database = require('../config/database');
+const { saveOrderSchema } = require('../middlewares/validator');
 
 exports.saveOrder = async (req, res) => {
   const client = await database.pool.connect();
 
   try {
-    const { userId, totalAmount, shippingFee, orderItems, shippingAddress } =
-      req.body;
+    const { userId, totalAmount, shippingFee, orderItems, shippingAddress } = req.body;
 
     const { error, value } = saveOrderSchema.validate({
       userId,
@@ -17,24 +16,22 @@ exports.saveOrder = async (req, res) => {
     });
 
     if (error) {
-      return res
-        .status(400)
-        .json({ success: false, error: error.details[0].message });
+      return res.status(400).json({ success: false, error: error.details[0].message });
     }
 
     const userExists = await database.pool.query({
-      text: "SELECT EXISTS (SELECT * FROM users WHERE id = $1)",
+      text: 'SELECT EXISTS (SELECT * FROM users WHERE id = $1)',
       values: [userId],
     });
 
     if (!userExists.rows[0].exists) {
-      return res.status(409).json({ success: false, error: "User not found" });
+      return res.status(409).json({ success: false, error: 'User not found' });
     }
 
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
     const saveOrder = await client.query({
-      text: "INSERT INTO orders (user_id, total_amount, shipping_fee, shipping_address) VALUES ($1, $2, $3, $4) RETURNING *",
+      text: 'INSERT INTO orders (user_id, total_amount, shipping_fee, shipping_address) VALUES ($1, $2, $3, $4) RETURNING *',
       values: [userId, totalAmount, shippingFee, shippingAddress],
     });
 
@@ -42,7 +39,7 @@ exports.saveOrder = async (req, res) => {
 
     for (const item of orderItems) {
       await client.query({
-        text: "INSERT INTO order_items (order_id, product_id, product_name, quantity, price, subtotal) VALUES ($1, $2, $3, $4, $5, $6)",
+        text: 'INSERT INTO order_items (order_id, product_id, product_name, quantity, price, subtotal) VALUES ($1, $2, $3, $4, $5, $6)',
         values: [
           orderId,
           item.productId,
@@ -54,21 +51,21 @@ exports.saveOrder = async (req, res) => {
       });
     }
 
-    await client.query("COMMIT");
+    await client.query('COMMIT');
 
     res.status(201).json({
       success: true,
-      message: "Order saved successfully",
+      message: 'Order saved successfully',
       order: saveOrder.rows[0],
     });
   } catch (error) {
-    await client.query("ROLLBACK");
+    await client.query('ROLLBACK');
 
-    console.error("Order creation failed:", error);
+    console.error('Order creation failed:', error);
 
     res.status(500).json({
       success: false,
-      error: "Failed to create order. Transaction rolled back.",
+      error: 'Failed to create order. Transaction rolled back.',
       details: error.message,
     });
   } finally {
@@ -79,7 +76,7 @@ exports.saveOrder = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
   try {
     const query =
-      "SELECT o.id as order_id, o.user_id, u.name as user_name, o.total_amount, o.shipping_fee, o.shipping_address,o.order_status, o.created_at as order_created_at, oi.id as item_id, oi.product_id, oi.product_name, oi.quantity, oi.price, oi.subtotal FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC, oi.id ASC";
+      'SELECT o.id as order_id, o.user_id, u.name as user_name, o.total_amount, o.shipping_fee, o.shipping_address,o.order_status, o.created_at as order_created_at, oi.id as item_id, oi.product_id, oi.product_name, oi.quantity, oi.price, oi.subtotal FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC, oi.id ASC';
 
     const result = await database.pool.query(query);
 
@@ -118,16 +115,16 @@ exports.getAllOrders = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Orders retrieved successfully",
+      message: 'Orders retrieved successfully',
       count: orders.length,
       orders: orders,
     });
   } catch (error) {
-    console.error("Failed to retrieve orders:", error);
+    console.error('Failed to retrieve orders:', error);
 
     res.status(500).json({
       success: false,
-      error: "Failed to retrieve orders",
+      error: 'Failed to retrieve orders',
       details: error.message,
     });
   }
@@ -140,21 +137,21 @@ exports.getOrdersByUserId = async (req, res) => {
     if (!userId || isNaN(userId)) {
       return res.status(400).json({
         success: false,
-        error: "Valid user ID is required",
+        error: 'Valid user ID is required',
       });
     }
 
     const userExists = await database.pool.query({
-      text: "SELECT EXISTS (SELECT * FROM users WHERE id = $1)",
+      text: 'SELECT EXISTS (SELECT * FROM users WHERE id = $1)',
       values: [userId],
     });
 
     if (!userExists.rows[0].exists) {
-      return res.status(409).json({ success: false, error: "User not found" });
+      return res.status(409).json({ success: false, error: 'User not found' });
     }
 
     const query =
-      "SELECT o.id as order_id, o.user_id, o.total_amount, o.shipping_fee, o.shipping_address, o.created_at as order_created_at, oi.id as item_id, oi.product_id, oi.product_name, oi.quantity, oi.price, oi.subtotal FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id WHERE o.user_id = $1 ORDER BY o.created_at DESC, oi.id ASC";
+      'SELECT o.id as order_id, o.user_id, o.total_amount, o.shipping_fee, o.shipping_address, o.created_at as order_created_at, oi.id as item_id, oi.product_id, oi.product_name, oi.quantity, oi.price, oi.subtotal FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id WHERE o.user_id = $1 ORDER BY o.created_at DESC, oi.id ASC';
 
     const result = await database.pool.query({
       text: query,
@@ -164,7 +161,7 @@ exports.getOrdersByUserId = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No orders found for this user",
+        message: 'No orders found for this user',
         orders: [],
       });
     }
@@ -208,11 +205,39 @@ exports.getOrdersByUserId = async (req, res) => {
       orders: orders,
     });
   } catch (error) {
-    console.error("Failed to retrieve user orders:", error);
+    console.error('Failed to retrieve user orders:', error);
 
     res.status(500).json({
       success: false,
-      error: "Failed to retrieve user orders",
+      error: 'Failed to retrieve user orders',
+      details: error.message,
+    });
+  }
+};
+
+exports.updateOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || isNaN(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid ID is required',
+      });
+    }
+
+    const orderExists = await database.pool.query({
+      text: 'SELECT EXISTS (SELECT * FROM orders WHERE id = $1)',
+      values: [id],
+    });
+
+    if (!userExists.rows[0].exists) {
+      return res.status(409).json({ success: false, error: 'Order not found' });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve update order',
       details: error.message,
     });
   }
