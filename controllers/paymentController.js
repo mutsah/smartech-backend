@@ -1,89 +1,102 @@
-require('dotenv').config({ path: `${process.cwd()}/.env` });
-const paypal = require('@paypal/checkout-server-sdk');
-const { paypalCreateOrderSchema } = require('../middlewares/validator');
+const { Paynow } = require('paynow');
 
-const environment = () => {
-  let clientId = process.env.PAYPAL_CLIENT_ID;
-  let clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+exports.initiatePayment = async (req, res) => {
+  const { email, orderItems, tax, shippingFee, reference } = req.body;
 
-  return new paypal.core.SandboxEnvironment(clientId, clientSecret);
-};
-
-const client = () => {
-  return new paypal.core.PayPalHttpClient(environment());
-};
-
-exports.createOrder = async (req, res) => {
-  const { subTotal, totalAmount, shippingFee, orderItems, tax } = req.body;
-
-  const { error, value } = paypalCreateOrderSchema.validate({
-    subTotal,
-    totalAmount,
-    shippingFee,
-    orderItems,
-    tax,
-  });
-
-  if (error) {
-    return res.status(400).json({ success: false, error: error.details[0].message });
+  if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
+    return res.status(400).json({ success: false, error: 'Cart is empty' });
   }
 
-  const request = new paypal.orders.OrdersCreateRequest();
-  request.prefer('return=representation');
-  request.requestBody({
-    intent: 'CAPTURE',
-    purchase_units: [
-      {
-        amount: {
-          currency_code: 'USD',
-          value: totalAmount,
-          breakdown: {
-            item_total: {
-              currency_code: 'USD',
-              value: subTotal,
-            },
-            shipping: {
-              currency_code: 'USD',
-              value: shippingFee,
-            },
-            tax_total: {
-              currency_code: 'USD',
-              value: tax,
-            },
-          },
-        },
-        items: orderItems.map((item) => ({
-          name: item.productName,
-          unit_amount: {
-            currency_code: 'USD',
-            value: item.price,
-          },
-          quantity: item.quantity,
-          sku: item.productId,
-        })),
-      },
-    ],
+  const returnUrl = `http://localhost:5173/order-success/${reference}`;
+  const resultUrl = 'http://localhost:3000/payment/payment-result';
+
+  // ✅ Create new Paynow instance with dynamic URLs
+  const paynow = new Paynow('21272', '08830426-c6b4-40ff-a7cf-8bda806085cc', resultUrl, returnUrl);
+
+  const payment = paynow.createPayment(reference, email);
+
+  orderItems.forEach((item) => {
+    payment.add(item.productName, item.subtotal);
   });
 
+  if (tax > 0) payment.add('Tax', tax);
+  if (shippingFee > 0) payment.add('Shipping Fee', shippingFee);
+
   try {
-    const order = await client().execute(request);
-    res
-      .status(200)
-      .json({ success: true, message: 'Order captured successfully', orderID: order.result.id });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    const response = await paynow.send(payment);
+
+    if (response.success) {
+      res.status(200).json({
+        success: true,
+        redirectUrl: response.redirectUrl,
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: response.error || 'Payment failed to initialize',
+      });
+    }
+  } catch (error) {
+    console.error('Paynow error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 };
 
-exports.captureOrder = async (req, res) => {
-  const { orderID } = req.params;
-  const request = new paypal.orders.OrdersCaptureRequest(orderID);
-  request.requestBody({});
+// exports.initiatePayment = async (req, res) => {
+//   const { email, amount, reference } = req.body;
 
+//   const payment = paynow.createPayment(reference, email);
+
+//   payment.add('Cart Items', amount);
+
+//   try {
+//     const response = await paynow.send(payment);
+
+//     console.log(response);
+
+//     if (response.success) {
+//       res.status(200).json({
+//         success: true,
+//         redirectUrl: response.redirectUrl,
+//       });
+//     } else {
+//       res.status(400).json({
+//         success: false,
+//         error: response.error || 'Payment failed to initialize',
+//       });
+//     }
+//   } catch (error) {
+//     console.error('Paynow error:', error);
+//     res.status(500).json({ success: false, error: 'Server error' });
+//   }
+// };
+
+// Add this handler for the result URL callback
+exports.handlePaymentResult = async (req, res) => {
   try {
-    const capture = await client().execute(request);
-    res.status(200).json({ success: true, message: 'Payment success', data: capture });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    // Paynow will POST the payment result to this endpoint
+    const pollUrl = req.body.pollurl;
+
+    if (pollUrl) {
+      // Poll the payment status
+      const status = await paynow.pollTransaction(pollUrl);
+
+      console.log('Payment status:', status);
+
+      // Handle the payment status
+      if (status.paid) {
+        // Payment was successful
+        console.log('Payment successful for reference:', status.reference);
+        // Update your database, send confirmation emails, etc.
+      } else {
+        console.log('Payment failed or pending for reference:', status.reference);
+      }
+    }
+
+    // Always respond with 200 to acknowledge receipt
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('Error handling payment result:', error);
+    res.status(200).send('OK'); // Still acknowledge to prevent retries
   }
 };
