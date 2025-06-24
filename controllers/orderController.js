@@ -231,9 +231,19 @@ exports.updateOrder = async (req, res) => {
       values: [id],
     });
 
-    if (!userExists.rows[0].exists) {
+    if (!orderExists.rows[0].exists) {
       return res.status(409).json({ success: false, error: 'Order not found' });
     }
+
+    await database.pool.query({
+      text: 'update orders set order_status = $1 where id = $2',
+      values: ['paid', id],
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Order updated successfully',
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
