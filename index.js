@@ -7,8 +7,8 @@ const app = express();
 app.use(
   cors({
     origin: ['http://localhost:3000', 'http://localhost:5173'],
-    methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT'], // Allow necessary HTTP methods
-    allowedHeaders: ['Content-Type'], // Allow required headers
+    methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT'],
+    allowedHeaders: ['Content-Type'],
   }),
 );
 
@@ -19,7 +19,7 @@ const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/authRoute');
 const productRouter = require('./routes/productRoute');
 const orderRouter = require('./routes/orderRoute');
-const paypal = require('@paypal/checkout-server-sdk');
+const paymentRouter = require('./routes/paymentRoute');
 
 // app.use("/uploads", express.static("uploads"));
 app.use(helmet());
@@ -39,11 +39,13 @@ app.use(
 app.use('/auth', authRouter);
 app.use('/product', productRouter);
 app.use('/order', orderRouter);
+app.use('/payment', paymentRouter);
 
+// testing
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Hello from the server. SCMS API running!!',
+    message: 'Hello from the server. API running!!',
   });
 });
 
