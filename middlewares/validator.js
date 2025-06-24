@@ -46,3 +46,11 @@ exports.saveOrderSchema = Joi.object({
   shippingAddress: Joi.string().required(),
   orderItems: Joi.required(),
 });
+
+exports.paypalCreateOrderSchema = Joi.object({
+  totalAmount: Joi.number().required(),
+  subTotal: Joi.number().required(),
+  shippingFee: Joi.number().required(),
+  tax: Joi.number().required(),
+  orderItems: Joi.required(),
+});
