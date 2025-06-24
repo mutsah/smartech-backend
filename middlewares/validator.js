@@ -52,5 +52,15 @@ exports.paypalCreateOrderSchema = Joi.object({
   subTotal: Joi.number().required(),
   shippingFee: Joi.number().required(),
   tax: Joi.number().required(),
-  orderItems: Joi.required(),
+  orderItems: Joi.array()
+    .items(
+      Joi.object({
+        productId: Joi.string().required(),
+        productName: Joi.string().required(),
+        quantity: Joi.number().integer().min(1).required(),
+        price: Joi.number().required(),
+        subtotal: Joi.number().required(),
+      }),
+    )
+    .required(),
 });
