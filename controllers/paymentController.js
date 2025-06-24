@@ -7,7 +7,7 @@ exports.initiatePayment = async (req, res) => {
     return res.status(400).json({ success: false, error: 'Cart is empty' });
   }
 
-  const returnUrl = `http://localhost:5173/order-success/${reference}`;
+  const returnUrl = `http://localhost:5173/order-update/${reference}`;
   const resultUrl = 'http://localhost:3000/payment/payment-result';
 
   // ✅ Create new Paynow instance with dynamic URLs
