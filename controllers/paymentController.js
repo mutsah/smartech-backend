@@ -1,5 +1,6 @@
-require('dotenv').config();
+require('dotenv').config({ path: `${process.cwd()}/.env` });
 const paypal = require('@paypal/checkout-server-sdk');
+const { paypalCreateOrderSchema } = require('../middlewares/validator');
 
 const environment = () => {
   let clientId = process.env.PAYPAL_CLIENT_ID;
@@ -14,6 +15,18 @@ const client = () => {
 
 exports.createOrder = async (req, res) => {
   const { subTotal, totalAmount, shippingFee, orderItems, tax } = req.body;
+
+  const { error, value } = paypalCreateOrderSchema.validate({
+    subTotal,
+    totalAmount,
+    shippingFee,
+    orderItems,
+    tax,
+  });
+
+  if (error) {
+    return res.status(400).json({ success: false, error: error.details[0].message });
+  }
 
   const request = new paypal.orders.OrdersCreateRequest();
   request.prefer('return=representation');
