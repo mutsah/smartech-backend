@@ -8,7 +8,7 @@ exports.initiatePayment = async (req, res) => {
   }
 
   const returnUrl = `http://localhost:5173/order-update/${reference}`;
-  const resultUrl = 'http://localhost:3000/payment/payment-result';
+  const resultUrl = 'https://smartech-backend.onrender.com/payment/payment-result';
 
   // ✅ Create new Paynow instance with dynamic URLs
   const paynow = new Paynow('21272', '08830426-c6b4-40ff-a7cf-8bda806085cc', resultUrl, returnUrl);
