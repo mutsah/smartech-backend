@@ -7,7 +7,7 @@ exports.initiatePayment = async (req, res) => {
     return res.status(400).json({ success: false, error: 'Cart is empty' });
   }
 
-  const returnUrl = `http://localhost:5173/order-update/${reference}`;
+  const returnUrl = `https://smartech-ecommerce.onrender.com/order-update/${reference}`;
   const resultUrl = 'https://smartech-backend.onrender.com/payment/payment-result';
 
   // ✅ Create new Paynow instance with dynamic URLs
