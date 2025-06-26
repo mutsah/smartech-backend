@@ -35,7 +35,10 @@ app.use(
   '/uploads',
   express.static('uploads', {
     setHeaders: (res) => {
-      res.setHeader('Access-Control-Allow-Origin', 'https://smartech-ecommerce.onrender.com');
+      res.setHeader('Access-Control-Allow-Origin', [
+        'https://smartech-ecommerce.onrender.com',
+        'http://localhost:5173/',
+      ]);
     },
   }),
 );
