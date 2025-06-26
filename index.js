@@ -9,7 +9,7 @@ app.use(
     origin: [
       'https://smartech-backend.onrender.com',
       'https://smartech-ecommerce.onrender.com',
-      'http://localhost:5173/',
+      'http://localhost:5173',
     ],
     methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT'],
     allowedHeaders: ['Content-Type'],
@@ -37,7 +37,7 @@ app.use(
     setHeaders: (res) => {
       res.setHeader('Access-Control-Allow-Origin', [
         'https://smartech-ecommerce.onrender.com',
-        'http://localhost:5173/',
+        'http://localhost:5173',
       ]);
     },
   }),
