@@ -6,7 +6,11 @@ const cors = require('cors');
 const app = express();
 app.use(
   cors({
-    origin: ['https://smartech-backend.onrender.com', 'https://smartech-ecommerce.onrender.com'],
+    origin: [
+      'https://smartech-backend.onrender.com',
+      'https://smartech-ecommerce.onrender.com',
+      'http://localhost:5173/',
+    ],
     methods: ['GET', 'POST', 'OPTIONS', 'DELETE', 'PUT'],
     allowedHeaders: ['Content-Type'],
   }),
