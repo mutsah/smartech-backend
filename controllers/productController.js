@@ -82,7 +82,7 @@ exports.addProduct = async (req, res) => {
     // Insert product with image path
     const result = await database.pool.query({
       text: 'INSERT INTO products(title, description, price, image_path,stock, category, sku) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-      values: [title, description, price, imagePath, stock, category],
+      values: [title, description, price, imagePath, stock, category, sku],
     });
 
     const productId = result.rows[0].id;
