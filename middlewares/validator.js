@@ -29,6 +29,7 @@ exports.updateProductSchema = Joi.object({
   price: Joi.number().positive().optional(),
   stock: Joi.number().integer().min(0).optional(),
   category: Joi.string().min(1).max(100).optional(),
+  sku: Joi.string(),
 });
 
 exports.addProductSchema = Joi.object({

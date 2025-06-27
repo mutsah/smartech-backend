@@ -177,7 +177,7 @@ exports.removeProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, price, stock, category } = req.body;
+    const { title, description, price, stock, category, sku } = req.body;
     const imagePath = req.file ? req.file.path : null;
 
     const { error, value } = updateProductSchema.validate({
@@ -186,6 +186,7 @@ exports.updateProduct = async (req, res) => {
       price,
       stock,
       category,
+      sku,
     });
 
     if (error) {
@@ -236,6 +237,12 @@ exports.updateProduct = async (req, res) => {
     if (description !== undefined && description !== null && String(description).trim() !== '') {
       updateFields.push(`description = $${paramIndex}`);
       values.push(String(description).trim());
+      paramIndex++;
+    }
+
+    if (sku !== undefined && sku !== null && String(sku).trim() !== '') {
+      updateFields.push(`sku = $${paramIndex}`);
+      values.push(String(sku).trim());
       paramIndex++;
     }
 
