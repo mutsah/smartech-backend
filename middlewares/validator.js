@@ -37,6 +37,7 @@ exports.addProductSchema = Joi.object({
   price: Joi.number().required(),
   stock: Joi.number().required(),
   category: Joi.string().required(),
+  sku: Joi.string().required(),
 });
 
 exports.saveOrderSchema = Joi.object({

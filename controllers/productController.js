@@ -44,7 +44,7 @@ exports.uploadProductImage = upload.single('image');
 
 exports.addProduct = async (req, res) => {
   try {
-    const { title, description, price, stock, category } = req.body;
+    const { title, description, price, stock, category, sku } = req.body;
 
     // Get image path if uploaded
     const imagePath = req.file ? req.file.path : null;
@@ -55,6 +55,7 @@ exports.addProduct = async (req, res) => {
       price,
       stock,
       category,
+      sku,
     });
 
     if (error) {
@@ -80,7 +81,7 @@ exports.addProduct = async (req, res) => {
 
     // Insert product with image path
     const result = await database.pool.query({
-      text: 'INSERT INTO products(title, description, price, image_path,stock, category) VALUES($1, $2, $3, $4, $5, $6) RETURNING id',
+      text: 'INSERT INTO products(title, description, price, image_path,stock, category, sku) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id',
       values: [title, description, price, imagePath, stock, category],
     });
 
@@ -95,6 +96,7 @@ exports.addProduct = async (req, res) => {
         description,
         price,
         image_path: imagePath,
+        sku: sku,
       },
     });
   } catch (error) {
